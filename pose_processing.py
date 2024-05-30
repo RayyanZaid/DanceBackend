@@ -15,6 +15,7 @@ from sklearn import metrics
 from sklearn.cluster import KMeans
 from sklearn.model_selection import ParameterGrid
 
+import math
 
 # Functions 
 
@@ -64,6 +65,19 @@ def process_videos(videoPath1 : str , videoPath2 : str):
 
 # 3) Using Machine Learning
 
+
+
+# 3) Using Machine Learning
+
+
+def euclidean_distance(p1, p2):
+    if len(p1) != len(p2):
+        raise ValueError("Lists must have the same number of elements")
+    
+    squared_diff_sum = sum((x - y) ** 2 for x, y in zip(p1, p2))
+    distance = math.sqrt(squared_diff_sum)
+    return distance
+
 def get_image_urls(studentVideoFrameData, professionalVideoFrameData, studentFolderName, professsionalFolderName, studentVideoKeyFrames : list, professionalVideoKeyFrames : list):
     
 
@@ -81,8 +95,26 @@ def get_image_urls(studentVideoFrameData, professionalVideoFrameData, studentFol
         index_student = (label['start'] + label['end']) // 2
 
         student_image = f"{studentFolderName}/{index_student}.jpg"
+        
 
+        smallestDistance = float('inf')
         index_professional = 0  # TODO: change to distance formula next week
+
+        i = 0
+        for eachProfessionalFrame in professionalVideoFrameData:
+            studentFrame = studentVideoFrameData[index_student]
+            # print(studentFrame)
+            # print(eachProfessionalFrame)
+
+            currDistance = euclidean_distance(studentFrame,eachProfessionalFrame)
+
+            if currDistance < smallestDistance:
+                index_professional = i
+                smallestDistance = currDistance
+
+            i += 1
+
+        
 
         professional_image =  f"{professsionalFolderName}/{index_professional}.jpg"
 
@@ -178,7 +210,7 @@ def kmean_hyper_param_tuning(video1FrameData):
 
         ss = metrics.silhouette_score(video1FrameData, kmeans_model.labels_)
 
-        print("Parameter:", p, 'Score:', ss)
+        # print("Parameter:", p, 'Score:', ss)
 
         if ss > best_score:
             best_score = ss
@@ -611,8 +643,10 @@ def pose_process_image(openCVFrame, poseModel : Pose ) -> tuple:
     # .pdf .txt -- text extensions
 
 
+# if pose_processing.py is the MAIN file being run, then it runs process_videos("golfVideo.mp4" , "golfVideo.mp4")
 
-process_videos("golfVideo.mp4" , "golfVideo.mp4")
+if __name__ == '__main__':
+    process_videos("golfVideo.mp4" , "golfVideo.mp4")
 
 
 
