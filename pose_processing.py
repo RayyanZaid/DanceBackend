@@ -61,6 +61,11 @@ def process_videos(videoPath1 : str , videoPath2 : str):
 
     # TODO: Average Error and Suggestions
 
+    averageError = calculate_average_error(video1KeyFrames, video2KeyFrames)
+    suggestions = analyze_dance_quality(averageError)
+
+    return averageError, public_urls, suggestions
+
 
 
 # 3) Using Machine Learning
@@ -218,6 +223,13 @@ def kmean_hyper_param_tuning(video1FrameData):
 
     return best_grid['n_clusters']
 
+
+def calculate_average_error(studentFrames, professionalFrames):
+
+    averageError = 0
+    
+
+    return averageError
 
 def analyze_dance_quality(average_error):
     if 0 <= average_error <= 5:
