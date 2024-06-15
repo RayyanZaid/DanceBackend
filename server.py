@@ -35,7 +35,7 @@ def analyze_videos():
         professionalVideo.save(professionalVideoName)
     
 
-    averageError, public_urls, suggestions = process_videos(studentVideo, professionalVideo)
+    averageError, public_urls, suggestions = process_videos(studentVideoName, professionalVideoName)
 
     os.remove(studentVideoName)
     os.remove(professionalVideoName)

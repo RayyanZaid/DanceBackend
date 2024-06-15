@@ -55,11 +55,10 @@ def process_videos(videoPath1 : str , videoPath2 : str):
     
     video1KeyFrames = []
     video2KeyFrames = []
-                                                                #  golfVideo   golfVideo2
+                                                                
     public_urls = get_image_urls(video1FrameData, video2FrameData, imageName1, imageName2, video1KeyFrames, video2KeyFrames)
 
 
-    # TODO: Average Error and Suggestions
 
     averageError = calculate_average_error(video1KeyFrames, video2KeyFrames)
     suggestions = analyze_dance_quality(averageError)
@@ -589,16 +588,22 @@ def get_angles_for_each_frame(mp_pose, landmarks, image, h, w):
 def draw_landmarks(results, mp_drawing, mp_pose, image):
     # for idx (index), x (value) in enumerate(_____):   \\storing both the index and the value
     # work w/both variables simultaneously; requires
-    for idx, landmark in enumerate(results.pose_landmarks.landmark):
-        # we care about 11-16 and 23-28
-        if idx in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 29, 30, 31, 32]:
-            results.pose_landmarks.landmark[idx].visibility = 0  # remove visibility of specific landmarks
 
-    # draw landmarks
-    mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                              mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2, circle_radius=2),
-                              # customize color, etc
-                              mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2))
+    if results == None: 
+        print("Cannot see all the angles")
+
+    else:
+        for idx, landmark in enumerate(results.pose_landmarks.landmark):
+            # we care about 11-16 and 23-28
+            if idx in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 29, 30, 31, 32]:
+                results.pose_landmarks.landmark[idx].visibility = 0  # remove visibility of specific landmarks
+
+        # draw landmarks
+        mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+                                mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2, circle_radius=2),
+                                # customize color, etc
+                                mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2))
+        
 
     return image
 
@@ -658,7 +663,7 @@ def pose_process_image(openCVFrame, poseModel : Pose ) -> tuple:
 # if pose_processing.py is the MAIN file being run, then it runs process_videos("golfVideo.mp4" , "golfVideo.mp4")
 
 if __name__ == '__main__':
-    process_videos("golfVideo.mp4" , "golfVideo.mp4")
+    process_videos("videos\\golfVideo.mp4" , "videos\\golfVideo.mp4")
 
 
 
