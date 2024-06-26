@@ -17,6 +17,11 @@ from sklearn.model_selection import ParameterGrid
 
 import math
 
+import db
+
+from datetime import datetime
+
+
 # Functions 
 
 
@@ -93,12 +98,20 @@ def get_image_urls(studentVideoFrameData, professionalVideoFrameData, studentFol
 
     public_urls = []
 
+    imgNum = 1
+
+    # Get the current date and time
+    now = datetime.now()
+
+    # Format the date and time as a string
+    current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    
     for label in student_cluster:
         
         
         index_student = (label['start'] + label['end']) // 2
 
-        student_image = f"{studentFolderName}/{index_student}.jpg"
+        student_image_file = f"{studentFolderName}/{index_student}.jpg"
         
 
         smallestDistance = float('inf')
@@ -120,17 +133,21 @@ def get_image_urls(studentVideoFrameData, professionalVideoFrameData, studentFol
 
         
 
-        professional_image =  f"{professsionalFolderName}/{index_professional}.jpg"
+        professional_image_file =  f"{professsionalFolderName}/{index_professional}.jpg"
 
 
         # TODO: Set up the database
 
-
         # TODO: Send student and professional images to database
-
+        
         
 
+        urls = db.send_data(student_image_file, professional_image_file, imgNum, current_date_time)
+        imgNum += 1
+        
+        public_urls.append(urls)
 
+        
         # update key frames to compare
 
         studentVideoKeyFrames.append(studentVideoFrameData[index_student])
@@ -223,12 +240,33 @@ def kmean_hyper_param_tuning(video1FrameData):
     return best_grid['n_clusters']
 
 
+
 def calculate_average_error(studentFrames, professionalFrames):
 
     averageError = 0
-    
+
+    studentFrames = np.array(studentFrames)
+    professionalFrames = np.array(professionalFrames)
+
+    differences = abs(professionalFrames - studentFrames)
+
+    allDifference = []
+
+    for array in differences:
+
+        for dif in range(8):
+
+            if array[dif] >= 15:
+                allDifference.append(array[dif])
+
+    errorTotal = len(allDifference)
+     
+    averageError = (   errorTotal / (len(differences) * 8)   )  *   100
+
+    print("Your score" +  str(averageError))
 
     return averageError
+
 
 def analyze_dance_quality(average_error):
     if 0 <= average_error <= 5:
@@ -663,7 +701,7 @@ def pose_process_image(openCVFrame, poseModel : Pose ) -> tuple:
 # if pose_processing.py is the MAIN file being run, then it runs process_videos("golfVideo.mp4" , "golfVideo.mp4")
 
 if __name__ == '__main__':
-    process_videos("videos\\golfVideo.mp4" , "videos\\golfVideo.mp4")
+    process_videos("videos\\golfVideo.mp4" , "videos\\golfVideoDiff.mp4")
 
 
 
