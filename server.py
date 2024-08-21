@@ -21,8 +21,8 @@ app = Flask(__name__)
 def analyze_videos():
     
     # Get the data from the phone. Store it in a variable
-    studentVideo = request.files.getlist("studentVideo")[0]
-    professionalVideo = request.files.getlist("professionalVideo")[0]
+    studentVideo = request.files.getlist("video2")[0]
+    professionalVideo = request.files.getlist("video1")[0]
 
     studentVideoName = studentVideo.filename
     professionalVideoName = professionalVideo.filename
