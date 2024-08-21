@@ -15,6 +15,12 @@ from sklearn import metrics
 from sklearn.cluster import KMeans
 from sklearn.model_selection import ParameterGrid
 
+import math
+
+import db
+
+from datetime import datetime
+
 
 # Functions 
 
@@ -54,15 +60,32 @@ def process_videos(videoPath1 : str , videoPath2 : str):
     
     video1KeyFrames = []
     video2KeyFrames = []
-                                                                #  golfVideo   golfVideo2
+                                                                
     public_urls = get_image_urls(video1FrameData, video2FrameData, imageName1, imageName2, video1KeyFrames, video2KeyFrames)
 
 
-    # TODO: Average Error and Suggestions
+
+    averageError = calculate_average_error(video1KeyFrames, video2KeyFrames)
+    suggestions = analyze_dance_quality(averageError)
+
+    return averageError, public_urls, suggestions
 
 
 
 # 3) Using Machine Learning
+
+
+
+# 3) Using Machine Learning
+
+
+def euclidean_distance(p1, p2):
+    if len(p1) != len(p2):
+        raise ValueError("Lists must have the same number of elements")
+    
+    squared_diff_sum = sum((x - y) ** 2 for x, y in zip(p1, p2))
+    distance = math.sqrt(squared_diff_sum)
+    return distance
 
 def get_image_urls(studentVideoFrameData, professionalVideoFrameData, studentFolderName, professsionalFolderName, studentVideoKeyFrames : list, professionalVideoKeyFrames : list):
     
@@ -75,26 +98,56 @@ def get_image_urls(studentVideoFrameData, professionalVideoFrameData, studentFol
 
     public_urls = []
 
+    imgNum = 1
+
+    # Get the current date and time
+    now = datetime.now()
+
+    # Format the date and time as a string
+    current_date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    
     for label in student_cluster:
         
         
         index_student = (label['start'] + label['end']) // 2
 
-        student_image = f"{studentFolderName}/{index_student}.jpg"
+        student_image_file = f"{studentFolderName}/{index_student}.jpg"
+        
 
+        smallestDistance = float('inf')
         index_professional = 0  # TODO: change to distance formula next week
 
-        professional_image =  f"{professsionalFolderName}/{index_professional}.jpg"
+        i = 0
+        for eachProfessionalFrame in professionalVideoFrameData:
+            studentFrame = studentVideoFrameData[index_student]
+            # print(studentFrame)
+            # print(eachProfessionalFrame)
+
+            currDistance = euclidean_distance(studentFrame,eachProfessionalFrame)
+
+            if currDistance < smallestDistance:
+                index_professional = i
+                smallestDistance = currDistance
+
+            i += 1
+
+        
+
+        professional_image_file =  f"{professsionalFolderName}/{index_professional}.jpg"
 
 
         # TODO: Set up the database
 
-
         # TODO: Send student and professional images to database
-
+        
         
 
+        urls = db.send_data(student_image_file, professional_image_file, imgNum, current_date_time)
+        imgNum += 1
+        
+        public_urls.append(urls)
 
+        
         # update key frames to compare
 
         studentVideoKeyFrames.append(studentVideoFrameData[index_student])
@@ -178,13 +231,41 @@ def kmean_hyper_param_tuning(video1FrameData):
 
         ss = metrics.silhouette_score(video1FrameData, kmeans_model.labels_)
 
-        print("Parameter:", p, 'Score:', ss)
+        # print("Parameter:", p, 'Score:', ss)
 
         if ss > best_score:
             best_score = ss
             best_grid = p
 
     return best_grid['n_clusters']
+
+
+
+def calculate_average_error(studentFrames, professionalFrames):
+
+    averageError = 0
+
+    studentFrames = np.array(studentFrames)
+    professionalFrames = np.array(professionalFrames)
+
+    differences = abs(professionalFrames - studentFrames)
+
+    allDifference = []
+
+    for array in differences:
+
+        for dif in range(8):
+
+            if array[dif] >= 15:
+                allDifference.append(array[dif])
+
+    errorTotal = len(allDifference)
+     
+    averageError = (   errorTotal / (len(differences) * 8)   )  *   100
+
+    print("Your score" +  str(averageError))
+
+    return averageError
 
 
 def analyze_dance_quality(average_error):
@@ -545,16 +626,22 @@ def get_angles_for_each_frame(mp_pose, landmarks, image, h, w):
 def draw_landmarks(results, mp_drawing, mp_pose, image):
     # for idx (index), x (value) in enumerate(_____):   \\storing both the index and the value
     # work w/both variables simultaneously; requires
-    for idx, landmark in enumerate(results.pose_landmarks.landmark):
-        # we care about 11-16 and 23-28
-        if idx in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 29, 30, 31, 32]:
-            results.pose_landmarks.landmark[idx].visibility = 0  # remove visibility of specific landmarks
 
-    # draw landmarks
-    mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
-                              mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2, circle_radius=2),
-                              # customize color, etc
-                              mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2))
+    if results == None: 
+        print("Cannot see all the angles")
+
+    else:
+        for idx, landmark in enumerate(results.pose_landmarks.landmark):
+            # we care about 11-16 and 23-28
+            if idx in [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 17, 18, 19, 20, 21, 22, 29, 30, 31, 32]:
+                results.pose_landmarks.landmark[idx].visibility = 0  # remove visibility of specific landmarks
+
+        # draw landmarks
+        mp_drawing.draw_landmarks(image, results.pose_landmarks, mp_pose.POSE_CONNECTIONS,
+                                mp_drawing.DrawingSpec(color=(255, 0, 0), thickness=2, circle_radius=2),
+                                # customize color, etc
+                                mp_drawing.DrawingSpec(color=(245, 66, 230), thickness=2, circle_radius=2))
+        
 
     return image
 
@@ -611,8 +698,10 @@ def pose_process_image(openCVFrame, poseModel : Pose ) -> tuple:
     # .pdf .txt -- text extensions
 
 
+# if pose_processing.py is the MAIN file being run, then it runs process_videos("golfVideo.mp4" , "golfVideo.mp4")
 
-process_videos("golfVideo.mp4" , "golfVideo.mp4")
+if __name__ == '__main__':
+    process_videos("videos\\golfVideo.mp4" , "videos\\golfVideoDiff.mp4")
 
 
 
