@@ -78,6 +78,8 @@ def get_image_urls(studentVideoFrameData,professionalVideoFrameData,studentFolde
         
         if label['start'] == None or label['end'] == None:
             continue
+        
+        
         index_student = (label['start']+label['end'])//2
 
         student_image_file = f"{studentFolderName}/{index_student}.jpg"
@@ -108,9 +110,7 @@ def get_image_urls(studentVideoFrameData,professionalVideoFrameData,studentFolde
                 smallestDistance = currDistance
 
             i = i + 1
-
         
-
         professional_image_file = f"{professionalFolderName}/{index_professional}.jpg"
 
 
@@ -120,7 +120,7 @@ def get_image_urls(studentVideoFrameData,professionalVideoFrameData,studentFolde
         imgNum += 1
         public_urls.append(urls)
 
-       
+
 
 
 
@@ -132,13 +132,21 @@ def get_image_urls(studentVideoFrameData,professionalVideoFrameData,studentFolde
         studentVideoKeyFrames.append(studentVideoFrameData[index_student])
         professionalVideoKeyFrames.append(professionalVideoFrameData[index_professional])
 
-        return public_urls
+        
+
+            
+
+    return public_urls
+    
+
 
 
 
 def get_cluster(video1FrameData):
     numCluster = kmean_hyper_param_tuning(video1FrameData)
 
+    if numCluster > 10:
+        numCluster = 10
     X = np.array(video1FrameData)
     # creat Kmeans model (best line of fit)with 'n' clusters using our video1data
     kmean_1 = KMeans(n_clusters=numCluster).fit(X)
@@ -154,8 +162,13 @@ def get_cluster(video1FrameData):
     
     for i in range(1, len(labels)):
 
-    # if at the end
+        if len(student_cluster) >= numCluster:
+            break
+
+        
         if labels [i] != labels[i-1]:
+
+            end = i - 1
             student_cluster.append(
                 {
                     'start':start,
@@ -166,17 +179,25 @@ def get_cluster(video1FrameData):
 
                 }
             )
-    else:
 
-        # last cluster
-        student_cluster.append(
+            start = i
 
-            {
-                'start':start,
-                    'end': i,
-                    'label': labels[i]
-            }
-        )
+
+        else:
+
+            # last cluster
+
+            end = i
+            student_cluster.append(
+
+                {
+                    'start':start,
+                        'end': i,
+                        'label': labels[i]
+                }
+            )
+
+            start = i + 1
 
     return student_cluster
 
