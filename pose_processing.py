@@ -159,7 +159,7 @@ def get_cluster(video1FrameData):
             student_cluster.append(
                 {
                     'start':start,
-                    'end': end,
+                    'end': i - 1,
                     'label': labels[i-1]
 
 
